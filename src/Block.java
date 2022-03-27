@@ -1,21 +1,19 @@
 import util.HashUtils;
 
-import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Date;
 
 public class Block {
-    //
+
     static ArrayList<Block> blockchain = new ArrayList<>();
     static int difficultyAdjustmentInterval = 10;
-    static long blockGenerationInterval = 300000000;
-
+    static long blockGenerationInterval = 30000;
 
     String hash;
     String previousHash;
     String data;
     long timestamp;
-    static int nextIndex = 0;
-    int index = 0;
+    int index;
     int difficulty;
     int nonce;
 
@@ -27,28 +25,31 @@ public class Block {
         this.data = data;
         this.difficulty = difficulty;
         this.nonce = nonce;
-
-        System.out.println(index);
     }
 
-    public String calculateHash(int index, String previousHash, long timestamp, String data, int nonce) {
+    public static String calculateHash(int index, String previousHash, long timestamp, String data, int nonce) {
         return HashUtils.getHashForStr(index + previousHash + timestamp + data + nonce);
+    }
+
+    public static String calculateHash(Block block) {
+        return HashUtils.getHashForStr(block.index + block.previousHash + block.timestamp + block.data + block.nonce);
     }
 
     public static int getDifficulty() {
         Block latestBlock = blockchain.get(blockchain.size() - 1);
         if (latestBlock.index % difficultyAdjustmentInterval == 0 && latestBlock.index != 0) {
-            System.out.println("hellofidhasfihpg");
-            return getAdjustmentDifficulty(latestBlock);
+            return getAdjustedDifficulty(latestBlock);
         } else {
             return latestBlock.difficulty;
         }
     }
 
-    static int getAdjustmentDifficulty(Block latestBlock) {
+    static int getAdjustedDifficulty(Block latestBlock) {
         Block prevAdjustmentBlock = blockchain.get(blockchain.size() - difficultyAdjustmentInterval);
         long timeExpected = blockGenerationInterval * difficultyAdjustmentInterval;
         long timeTaken = latestBlock.timestamp - prevAdjustmentBlock.timestamp;
+        System.out.println("timeExpected: " + timeExpected);
+        System.out.println("timeTaken: " + timeTaken);
 
         if (timeTaken < timeExpected / 2) {
             return prevAdjustmentBlock.difficulty + 1;
@@ -59,46 +60,60 @@ public class Block {
         }
     }
 
-    public static boolean hashMatchesDifficulty(String hash, int difficulty) {
-        String hashInBinary = new BigInteger(hash, 16).toString(2);
-        hashInBinary = String.format("%256s", hashInBinary).replace(" ", "0");
-
-        String requiredPrefix = "";
-        for (int i = 0; i < difficulty; i++)
-            requiredPrefix += "0";
-
-        return hashInBinary.startsWith(requiredPrefix);
-    }
-
     public Block findBlock(int index, String previousHash, long timestamp, String data, int diff) {
+        String prefix0 = HashUtils.getPrefix0(diff);
         int nonce = 0;
 
+        String hash = calculateHash(index, previousHash, timestamp, data, nonce);
         while (true) {
-            String hash = calculateHash(index, previousHash, timestamp, data, nonce);
-
-            if (hashMatchesDifficulty(hash, diff)) {
+            assert prefix0 != null;
+            if (hash.startsWith(prefix0)) {
                 return new Block(index, hash, previousHash, timestamp, data, diff, nonce);
             } else {
                 nonce++;
+                hash = calculateHash(index, previousHash, timestamp, data, nonce);
             }
         }
+    }
 
+    static boolean isValidBlock(Block newBlock) {
+        Block previousBlock = blockchain.get(blockchain.size() - 1);
+        if (previousBlock.index + 1 != newBlock.index) {
+            System.out.println("index not match!");
+            return false;
+        }
+        else if (!previousBlock.hash.equals(newBlock.previousHash)) {
+            System.out.println("previous hash not match!");
+            return false;
+        }
+        else if (!calculateHash(newBlock).equals(newBlock.hash)) {
+            System.out.println("hash not match!");
+            return false;
+        }
+        else return true;
     }
 
     public static void main(String[] args) {
-        Block genesis = new Block(0, "", "0", System.currentTimeMillis(), "This is genesis", 6, 0);
+        Block genesis = new Block(0, "", "0", new Date().getTime(), "This is genesis", 5, 0);
 
         blockchain.add(genesis);
         while (true) {
+            long startTime = System.currentTimeMillis();
             Block lastBlock = blockchain.get(blockchain.size() - 1);
+
 
             int index = lastBlock.index + 1;
             String previousHash = lastBlock.hash;
-            long timestamp = System.currentTimeMillis();
+            long timestamp = new Date().getTime();
             String data = "";
             int difficulty = getDifficulty();
+            Block newBlock = lastBlock.findBlock(index, previousHash, timestamp, data, difficulty);
+            blockchain.add(newBlock);
 
-            blockchain.add(lastBlock.findBlock(index, previousHash, timestamp, data, difficulty));
+            long endTime = System.currentTimeMillis();
+            long diffTime = endTime - startTime;
+            System.out.println(diffTime/1000 + " seconds");
+            System.out.println("current difficulty: " + newBlock.difficulty);
         }
     }
 }
