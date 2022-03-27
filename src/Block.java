@@ -1,16 +1,14 @@
 import util.HashUtils;
 
-import java.sql.Time;
+import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.Timer;
-
-import com.google.gson.GsonBuilder;
-
 
 public class Block {
+    //
     static ArrayList<Block> blockchain = new ArrayList<>();
+    static int difficultyAdjustmentInterval = 10;
+    static long blockGenerationInterval = 300000000;
+
 
     String hash;
     String previousHash;
@@ -18,73 +16,89 @@ public class Block {
     long timestamp;
     static int nextIndex = 0;
     int index = 0;
-    int difficulty = 6;
+    int difficulty;
     int nonce;
 
-    public Block(String data, String previousHash) {
-        this.data = data;
+    public Block(int index, String hash, String previousHash, long timestamp, String data, int difficulty, int nonce) {
+        this.index = index;
+        this.hash = hash;
         this.previousHash = previousHash;
-        this.timestamp = System.currentTimeMillis()/1000;
-        index = nextIndex++;
-        this.hash = calculateHash();
-        mineBlock();
+        this.timestamp = timestamp;
+        this.data = data;
+        this.difficulty = difficulty;
+        this.nonce = nonce;
+
+        System.out.println(index);
     }
 
-    public String calculateHash() {
-        return HashUtils.getHashForStr(index + previousHash + timestamp + data);
+    public String calculateHash(int index, String previousHash, long timestamp, String data, int nonce) {
+        return HashUtils.getHashForStr(index + previousHash + timestamp + data + nonce);
     }
 
-    void mineBlock() {
-        powDemo(difficulty, this.hash);
-    }
-
-    public static String powDemo(int diff, String str){
-        String prefix0 = HashUtils.getPrefix0(diff);
-        System.out.println("prefix0: " + prefix0);
-        int nonce = 0;
-
-        String hash = HashUtils.getHashForStr(str);
-        while(true){
-            assert prefix0 != null;
-            if(hash.startsWith(prefix0)){
-                System.out.println("Find target!");
-                System.out.println("hash: " + hash);
-                System.out.println("nonce: " + nonce);
-                return hash;
-            }else {
-                nonce++;
-                hash = HashUtils.getHashForStr(str + nonce);
-            }
+    public static int getDifficulty() {
+        Block latestBlock = blockchain.get(blockchain.size() - 1);
+        if (latestBlock.index % difficultyAdjustmentInterval == 0 && latestBlock.index != 0) {
+            System.out.println("hellofidhasfihpg");
+            return getAdjustmentDifficulty(latestBlock);
+        } else {
+            return latestBlock.difficulty;
         }
     }
 
+    static int getAdjustmentDifficulty(Block latestBlock) {
+        Block prevAdjustmentBlock = blockchain.get(blockchain.size() - difficultyAdjustmentInterval);
+        long timeExpected = blockGenerationInterval * difficultyAdjustmentInterval;
+        long timeTaken = latestBlock.timestamp - prevAdjustmentBlock.timestamp;
+
+        if (timeTaken < timeExpected / 2) {
+            return prevAdjustmentBlock.difficulty + 1;
+        } else if (timeTaken > timeExpected * 2) {
+            return prevAdjustmentBlock.difficulty - 1;
+        } else {
+            return prevAdjustmentBlock.difficulty;
+        }
+    }
+
+    public static boolean hashMatchesDifficulty(String hash, int difficulty) {
+        String hashInBinary = new BigInteger(hash, 16).toString(2);
+        hashInBinary = String.format("%256s", hashInBinary).replace(" ", "0");
+
+        String requiredPrefix = "";
+        for (int i = 0; i < difficulty; i++)
+            requiredPrefix += "0";
+
+        return hashInBinary.startsWith(requiredPrefix);
+    }
+
+    public Block findBlock(int index, String previousHash, long timestamp, String data, int diff) {
+        int nonce = 0;
+
+        while (true) {
+            String hash = calculateHash(index, previousHash, timestamp, data, nonce);
+
+            if (hashMatchesDifficulty(hash, diff)) {
+                return new Block(index, hash, previousHash, timestamp, data, diff, nonce);
+            } else {
+                nonce++;
+            }
+        }
+
+    }
+
     public static void main(String[] args) {
-        Block genesis = new Block("First block", "0");
-//        System.out.println("Genesis previous hash: " + genesis.previousHash);
-//        System.out.println("Genesis hash: " + genesis.hash);
-//        System.out.println("Genesis index: " + genesis.index);
-//        System.out.println();
-
-        Block secondBlock = new Block("Second block", genesis.hash);
-//        System.out.println("Second block previous hash: " + secondBlock.previousHash);
-//        System.out.println("Second block hash: " + secondBlock.hash);
-//        System.out.println("Second block index: " + secondBlock.index);
-//        System.out.println();
-
-        Block thirdBlock = new Block("Third block", secondBlock.hash);
-//        System.out.println("Third block previous hash: " + thirdBlock.previousHash);
-//        System.out.println("Third block hash: " + thirdBlock.hash);
-//        System.out.println("Third block index: " + thirdBlock.index);
+        Block genesis = new Block(0, "", "0", System.currentTimeMillis(), "This is genesis", 6, 0);
 
         blockchain.add(genesis);
-        blockchain.add(secondBlock);
-        blockchain.add(thirdBlock);
+        while (true) {
+            Block lastBlock = blockchain.get(blockchain.size() - 1);
 
+            int index = lastBlock.index + 1;
+            String previousHash = lastBlock.hash;
+            long timestamp = System.currentTimeMillis();
+            String data = "";
+            int difficulty = getDifficulty();
 
-        String blockchainJson = new GsonBuilder().setPrettyPrinting().create().toJson(blockchain);
-        System.out.println(blockchainJson);
-
-
-
+            blockchain.add(lastBlock.findBlock(index, previousHash, timestamp, data, difficulty));
+        }
     }
 }
