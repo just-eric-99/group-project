@@ -19,6 +19,7 @@ public class Wallet {
             publicKey = keypair.getPublic();
         } catch (Exception e) {
             e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 
