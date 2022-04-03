@@ -1,3 +1,5 @@
+import util.HashUtils;
+
 import java.util.Arrays;
 
 public class Transaction {
@@ -11,6 +13,6 @@ public class Transaction {
         String txOutContent = Arrays.stream(transaction.txOuts)
                 .map(txOut -> txOut.address+txOut.amount).reduce("", String::concat);
 
-        return (txInContent+txOutContent);
+        return HashUtils.getHashForStr(txInContent+txOutContent);
     }
 }
