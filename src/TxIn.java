@@ -1,9 +1,5 @@
 public class TxIn {
-    public String address;
-    public double amount;
-
-    public TxIn(String add, double amt){
-        this.address = add;
-        this.amount = amt;
-    }
+    public String txOutID;
+    public double txOutIndex; //is this suppposed to be double, int, or long?
+    public String signature;
 }

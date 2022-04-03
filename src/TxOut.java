@@ -1,5 +1,9 @@
 public class TxOut {
-    public String txOutID;
-    public double txOutIndex; //is this suppposed to be double, int, or long?
-    public String signature;
+    public String address;
+    public double amount;
+
+    public TxOut(String add, double amt){
+        this.address = add;
+        this.amount = amt;
+    }
 }
