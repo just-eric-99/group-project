@@ -1,13 +1,18 @@
+package Block;
+
+import Transaction.TxOut;
 import util.HashUtils;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 
 public class Block {
 
     static ArrayList<Block> blockchain = new ArrayList<>();
     static int difficultyAdjustmentInterval = 10;
     static long blockGenerationInterval = 30000;
+    public static HashMap<String, TxOut> UTXOs = new HashMap<String,TxOut>(); //list of all unspent transactions.
 
     String hash;
     String previousHash;
