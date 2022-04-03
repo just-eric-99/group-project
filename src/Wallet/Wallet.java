@@ -5,14 +5,14 @@ import util.ECDSAUtils;
 import java.security.*;
 
 public class Wallet {
-    public PrivateKey privateKey;
-    public PublicKey publicKey;
+    private PrivateKey privateKey;
+    private PublicKey publicKey;
 
     public Wallet(){
         generateKeyPair();
     }
 
-    public void generateKeyPair(){
+    private void generateKeyPair(){
         try {
             KeyPair keypair = ECDSAUtils.getKeyPair();
             privateKey = keypair.getPrivate();
@@ -22,5 +22,8 @@ public class Wallet {
             throw new RuntimeException(e);
         }
     }
+
+    public PrivateKey getPrivateKey() { return this.privateKey; }
+    public PublicKey getPublicKey() { return this.publicKey; }
 
 }
