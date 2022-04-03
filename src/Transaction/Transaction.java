@@ -7,7 +7,7 @@ import java.util.Arrays;
 
 public class Transaction {
     public String id;
-    public ArrayList<TxIn> txIns = new ArrayList<>(); //should txIns and txOuts be static, store all txIns and txOuts?
+    public ArrayList<TxIn> txIns = new ArrayList<>();
     public ArrayList<TxOut> txOuts = new ArrayList<>();
 
     public String getTransactionId(Transaction transaction){ //refers to id of next transaction block?
