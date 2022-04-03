@@ -1,3 +1,5 @@
+package Transaction;
+
 public class TxOut {
     public String address;
     public double amount;
