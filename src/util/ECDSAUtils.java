@@ -3,6 +3,7 @@ package util;
 //import org.apache.commons.codec.binary.Hex;
 import javax.xml.bind.DatatypeConverter;
 import java.security.*;
+import java.util.Base64;
 
 public class ECDSAUtils {
 
@@ -56,6 +57,10 @@ public class ECDSAUtils {
             e.printStackTrace();
         }
         return false;
+    }
+
+    public static String getStringFromKey(Key key) {
+        return Base64.getEncoder().encodeToString(key.getEncoded());
     }
 
 }
