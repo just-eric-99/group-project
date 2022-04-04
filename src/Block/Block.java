@@ -1,8 +1,6 @@
 package Block;
 
-import Transaction2.Transaction;
-import Transaction2.TxIn;
-import Transaction2.TxOut;
+import Transaction.Transaction;
 import Wallet.Wallet;
 import com.google.gson.Gson;
 import util.ECDSAUtils;
@@ -18,12 +16,13 @@ public class Block {
     static double coinbaseAmount = 50;
     static ArrayList<Transaction> mempool = new ArrayList<>();
 
-    public static HashMap<String, Long> utxos = new HashMap<>();
+    ArrayList<UTXO> utxos = new ArrayList<>();
+
+    int index;
     String hash;
     String previousHash;
     String data;
     long timestamp;
-    int index;
     int difficulty;
     int nonce;
 
@@ -101,6 +100,35 @@ public class Block {
             return false;
         }
         else return true;
+    }
+
+    static boolean isValidChain(ArrayList<Block> chain){
+        if(!isValidGenesis(chain.get(0))){
+            return false;
+        }
+
+        for(int i=1; i<chain.size(); i++){
+            if(!isValidBlock(chain.get(i))){
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean isValidGenesis(Block block){
+        return blockchain.get(0) == block;
+    }
+
+    static void replaceChain(ArrayList<Block> newChain){
+        if(isValidChain(newChain) && newChain.size() > blockchain.size()){
+            System.out.println("Received blockchain is valid. Replacing current blockchain with received blockchain");
+            blockchain = newChain;
+            //fixme
+            //broadcast latest
+        }
+        else{
+            System.out.println("Received blockchain invalid");
+        }
     }
 
     public static void main(String[] args) {

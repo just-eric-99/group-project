@@ -1,9 +1,8 @@
 package Wallet;
 
-import Transaction2.*;
+import Transaction.*;
 import util.ECDSAUtils;
 import Block.Block;
-import util.HashUtils;
 
 import java.security.*;
 import java.util.ArrayList;
