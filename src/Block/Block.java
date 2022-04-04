@@ -1,6 +1,11 @@
 package Block;
 
-import Transaction.TxOut;
+import Transaction2.Transaction;
+import Transaction2.TxIn;
+import Transaction2.TxOut;
+import Wallet.Wallet;
+import com.google.gson.Gson;
+import util.ECDSAUtils;
 import util.HashUtils;
 
 import java.util.ArrayList;
@@ -12,8 +17,10 @@ public class Block {
     static ArrayList<Block> blockchain = new ArrayList<>();
     static int difficultyAdjustmentInterval = 10;
     static long blockGenerationInterval = 30000;
-    public static HashMap<String, TxOut> UTXOs = new HashMap<String,TxOut>(); //list of all unspent transactions.
+    static double coinbaseAmount = 50;
+    static ArrayList<Transaction> mempool = new ArrayList<>();
 
+    public static HashMap<String, Long> utxos = new HashMap<>();
     String hash;
     String previousHash;
     String data;
@@ -106,11 +113,22 @@ public class Block {
             long startTime = System.currentTimeMillis();
             Block lastBlock = blockchain.get(blockchain.size() - 1);
 
-
             int index = lastBlock.index + 1;
             String previousHash = lastBlock.hash;
             long timestamp = new Date().getTime();
-            String data = "";
+
+            ArrayList<TxIn> coinBaseTxIns = new ArrayList<>();
+            coinBaseTxIns.add(new TxIn(String.valueOf(index), 0,""));
+            ArrayList<TxOut> coinBaseTxOuts = new ArrayList<>();
+            //add transaction fee as well
+            coinBaseTxOuts.add(new TxOut(ECDSAUtils.getStringFromKey(miner.getPublicKey()), coinbaseAmount));
+            Transaction coinbaseTransaction = new Transaction(coinBaseTxIns,coinBaseTxOuts);
+
+            ArrayList<Transaction> temp = new ArrayList<>();
+            temp.add(coinbaseTransaction);
+            temp.addAll(mempool);
+            String data = new Gson().toJson(temp);
+
             int difficulty = getDifficulty();
             Block newBlock = lastBlock.findBlock(index, previousHash, timestamp, data, difficulty);
             blockchain.add(newBlock);
