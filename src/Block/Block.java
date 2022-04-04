@@ -8,9 +8,7 @@ import com.google.gson.Gson;
 import util.ECDSAUtils;
 import util.HashUtils;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
+import java.util.*;
 
 public class Block {
 
@@ -108,6 +106,7 @@ public class Block {
     public static void main(String[] args) {
         Block genesis = new Block(0, "", "0", new Date().getTime(), "This is genesis", 5, 0);
 
+        Wallet miner = new Wallet();
         blockchain.add(genesis);
         while (true) {
             long startTime = System.currentTimeMillis();

@@ -1,6 +1,9 @@
 package Wallet;
 
+import Transaction2.*;
 import util.ECDSAUtils;
+import Block.Block;
+import util.HashUtils;
 
 import java.security.*;
 import java.util.ArrayList;
@@ -64,4 +67,8 @@ public class Wallet {
     public PrivateKey getPrivateKey() { return this.privateKey; }
     public PublicKey getPublicKey() { return this.publicKey; }
 
+    public static void main(String[] args) {
+        Wallet w1 = new Wallet();
+        w1.getBalance();
+    }
 }
