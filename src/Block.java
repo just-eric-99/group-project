@@ -8,7 +8,6 @@ public class Block {
     static int difficultyAdjustmentInterval = 10;
     static long blockGenerationInterval = 30000;
     static double coinbaseAmount = 50;
-    static ArrayList<Transaction> mempool = new ArrayList<>();
 
     public static ArrayList<UTXO> utxos = new ArrayList<>();
 
