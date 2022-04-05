@@ -96,7 +96,7 @@ public class HashUtils {
      * @param   array       the byte array to convert
      * @return              a length*2 character string encoding the byte array
      */
-    private static String byteToHex(byte[] array) {
+    public static String byteToHex(byte[] array) {
         BigInteger bi = new BigInteger(1, array);
         String hex = bi.toString(16);
         int paddingLength = (array.length * 2) - hex.length();

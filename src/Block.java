@@ -1,9 +1,3 @@
-package Block;
-
-import Transaction.Transaction;
-import Wallet.Wallet;
-import com.google.gson.Gson;
-import util.ECDSAUtils;
 import util.HashUtils;
 
 import java.util.*;
@@ -16,7 +10,7 @@ public class Block {
     static double coinbaseAmount = 50;
     static ArrayList<Transaction> mempool = new ArrayList<>();
 
-    ArrayList<UTXO> utxos = new ArrayList<>();
+    public static ArrayList<UTXO> utxos = new ArrayList<>();
 
     int index;
     String hash;
@@ -85,6 +79,10 @@ public class Block {
         }
     }
 
+    public void generateGenesisBlock(){
+        blockchain.add(new Block(0, "", "0", new Date().getTime(), "This is genesis", 1, 0));
+    }
+
     static boolean isValidBlock(Block newBlock) {
         Block previousBlock = blockchain.get(blockchain.size() - 1);
         if (previousBlock.index + 1 != newBlock.index) {
@@ -131,39 +129,39 @@ public class Block {
         }
     }
 
-    public static void main(String[] args) {
-        Block genesis = new Block(0, "", "0", new Date().getTime(), "This is genesis", 5, 0);
-
-        Wallet miner = new Wallet();
-        blockchain.add(genesis);
-        while (true) {
-            long startTime = System.currentTimeMillis();
-            Block lastBlock = blockchain.get(blockchain.size() - 1);
-
-            int index = lastBlock.index + 1;
-            String previousHash = lastBlock.hash;
-            long timestamp = new Date().getTime();
-
-            ArrayList<TxIn> coinBaseTxIns = new ArrayList<>();
-            coinBaseTxIns.add(new TxIn(String.valueOf(index), 0,""));
-            ArrayList<TxOut> coinBaseTxOuts = new ArrayList<>();
-            //add transaction fee as well
-            coinBaseTxOuts.add(new TxOut(ECDSAUtils.getStringFromKey(miner.getPublicKey()), coinbaseAmount));
-            Transaction coinbaseTransaction = new Transaction(coinBaseTxIns,coinBaseTxOuts);
-
-            ArrayList<Transaction> temp = new ArrayList<>();
-            temp.add(coinbaseTransaction);
-            temp.addAll(mempool);
-            String data = new Gson().toJson(temp);
-
-            int difficulty = getDifficulty();
-            Block newBlock = lastBlock.findBlock(index, previousHash, timestamp, data, difficulty);
-            blockchain.add(newBlock);
-
-            long endTime = System.currentTimeMillis();
-            long diffTime = endTime - startTime;
-            System.out.println(diffTime/1000 + " seconds");
-            System.out.println("current difficulty: " + newBlock.difficulty);
-        }
-    }
+//    public static void main(String[] args) {
+//        Block genesis = new Block(0, "", "0", new Date().getTime(), "This is genesis", 5, 0);
+//
+//        Wallet miner = new Wallet();
+//        blockchain.add(genesis);
+//        while (true) {
+//            long startTime = System.currentTimeMillis();
+//            Block lastBlock = blockchain.get(blockchain.size() - 1);
+//
+//            int index = lastBlock.index + 1;
+//            String previousHash = lastBlock.hash;
+//            long timestamp = new Date().getTime();
+//
+//            ArrayList<TxIn> coinBaseTxIns = new ArrayList<>();
+//            coinBaseTxIns.add(new TxIn(String.valueOf(index), 0,""));
+//            ArrayList<TxOut> coinBaseTxOuts = new ArrayList<>();
+//            //add transaction fee as well
+//            coinBaseTxOuts.add(new TxOut(ECDSAUtils.getStringFromKey(miner.getPublicKey()), coinbaseAmount));
+//            Transaction coinbaseTransaction = new Transaction(coinBaseTxIns,coinBaseTxOuts);
+//
+//            ArrayList<Transaction> temp = new ArrayList<>();
+//            temp.add(coinbaseTransaction);
+//            temp.addAll(mempool);
+//            String data = new Gson().toJson(temp);
+//
+//            int difficulty = getDifficulty();
+//            Block newBlock = lastBlock.findBlock(index, previousHash, timestamp, data, difficulty);
+//            blockchain.add(newBlock);
+//
+//            long endTime = System.currentTimeMillis();
+//            long diffTime = endTime - startTime;
+//            System.out.println(diffTime/1000 + " seconds");
+//            System.out.println("current difficulty: " + newBlock.difficulty);
+//        }
+//    }
 }
