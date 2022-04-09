@@ -68,7 +68,7 @@ public class Transaction {
             tx.txIns.forEach(txIn -> usedTxOuts.add(new UTXO(txIn.txOutId, txIn.txOutIndex, "", 0)));
         }
 
-        currentUTXOs.stream().filter(x -> findUTXO(x.txOutId, x.txOutIndex, usedTxOuts) == null).forEach(resultingUTXOs::add);
+        currentUTXOs.stream().filter(x -> findUTXO(x.txOutId, x.txOutIndex, usedTxOuts) != null).forEach(resultingUTXOs::add);
         // ==  null or != null ???
         //from currentUTXOs, filter out those that are in UsedTxOuts, then add to resultingUTXOs.
         resultingUTXOs.addAll(newUTXOs);

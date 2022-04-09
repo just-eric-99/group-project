@@ -1,10 +1,10 @@
 import util.HashUtils;
 
+import java.io.Serializable;
 import java.util.*;
 
-public class Block {
+public class Block implements Serializable {
 
-    static ArrayList<Block> blockchain = new ArrayList<>();
     static int difficultyAdjustmentInterval = 10;
     static long blockGenerationInterval = 30000;
     static double coinbaseAmount = 50;
@@ -62,7 +62,7 @@ public class Block {
         }
     }
 
-    public Block findBlock(int index, String previousHash, long timestamp, String data, int diff) {
+    public static Block findBlock(int index, String previousHash, long timestamp, String data, int diff) {
         String prefix0 = HashUtils.getPrefix0(diff);
         int nonce = 0;
 
@@ -78,8 +78,8 @@ public class Block {
         } return null;
     }
 
-    public void generateGenesisBlock(){
-        blockchain.add(new Block(0, "", "0", new Date().getTime(), "This is genesis", 1, 0));
+    static Block generateGenesisBlock() {
+        return new Block(0, "", "0", new Date().getTime(), "This is genesis", 6, 0);
     }
 
     static boolean isValidBlock(Block newBlock) {
@@ -117,7 +117,20 @@ public class Block {
         }
     }
 
-//    public static void main(String[] args) {
+    @Override
+    public String toString() {
+        return "Block{" +
+                "index=" + index +
+                ", hash='" + hash + '\'' +
+                ", previousHash='" + previousHash + '\'' +
+                ", data='" + data + '\'' +
+                ", timestamp=" + timestamp +
+                ", difficulty=" + difficulty +
+                ", nonce=" + nonce +
+                '}';
+    }
+
+//        public static void main(String[] args) {
 //        Block genesis = new Block(0, "", "0", new Date().getTime(), "This is genesis", 5, 0);
 //
 //        Wallet miner = new Wallet();

@@ -1,6 +1,7 @@
 import java.util.ArrayList;
 
-public class Mempool {
+public class Mempool{
+
     ArrayList<Transaction> mempool = new ArrayList<>();
 
     public void addToMempool(Transaction transaction){
