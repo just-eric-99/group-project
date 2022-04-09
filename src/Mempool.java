@@ -11,4 +11,8 @@ public class Mempool{
     public void updateMempool(ArrayList<Transaction> invalidTxs) {
 
     }
+
+    public ArrayList<Transaction> getMempool() {
+        return mempool;
+    }
 }

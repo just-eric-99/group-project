@@ -17,8 +17,6 @@ public class Transaction {
     public ArrayList<TxIn> txIns = new ArrayList<>();
     public ArrayList<TxOut> txOuts = new ArrayList<>();
 
-    int coinbaseAmount = 50;
-
 //    public Transaction(ArrayList<TxIn> txIns, ArrayList<TxOut> txOuts){
 //        this.txIns = txIns;
 //        this.txOuts = txOuts;
@@ -85,10 +83,19 @@ public class Transaction {
         return null;
     }
 
-    Transaction getCoinbaseTransaction (String address, int blockIndex) {
+//    Transaction getCoinbaseTransaction (String address, int blockIndex) {
+//        Transaction temp = new Transaction();
+//        temp.txIns.add(new TxIn("", blockIndex,""));
+//        temp.txOuts.add(new TxOut(address, coinbaseAmount));
+//        temp.id = getTransactionId();
+//
+//        return temp;
+//    }
+
+    Transaction getCoinbaseTransaction (String address) {
         Transaction temp = new Transaction();
-        temp.txIns.add(new TxIn("", blockIndex,""));
-        temp.txOuts.add(new TxOut(address, coinbaseAmount));
+        temp.txIns = new ArrayList<>();
+        temp.txOuts.add(new TxOut(address, 50));
         temp.id = getTransactionId();
 
         return temp;
@@ -96,7 +103,9 @@ public class Transaction {
 
     // fixme
     boolean validateTransaction (Transaction transaction, ArrayList<UTXO> UTXOList){
+        for(UTXO utxo : UTXOList){
 
+        }
 
 
 
@@ -124,7 +133,6 @@ public class Transaction {
         }
 
         return true;
-
     }
 }
 

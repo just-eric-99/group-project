@@ -11,13 +11,14 @@ import static util.ECDSAUtils.stringToKey;
 
 public class Wallet {
 
-    String keyPath = "key.json";
+    String keyPath;
 
     private PrivateKey privateKey = null;
     private PublicKey publicKey = null;
 
-    public Wallet() throws Exception{
+    public Wallet(int port) throws Exception{
         Gson gson = new Gson();
+        keyPath = "key" + port + ".json";
         File f = new File(keyPath);
         if(f.isFile()) {
             Map<?, ?> map = gson.fromJson(new FileReader(keyPath), Map.class);
@@ -69,7 +70,6 @@ public class Wallet {
     }
 
     public Transaction pay(String address, double amount) {
-        // get balance();
         if (getBalance() < amount) {
             System.out.println("Insufficient fund to send transaction");
             return null;
@@ -81,7 +81,6 @@ public class Wallet {
         ArrayList<TxIn> unsignedTxIns = new ArrayList<>();
         for (UTXO utxo : myUTXOs) {
             total += utxo.getAmount();
-            // fixme signature to be verify
             TxIn unsignedTxIn = new TxIn(utxo.getTxOutId(), utxo.getTxOutIndex());
 
             unsignedTxIns.add(unsignedTxIn);
@@ -97,7 +96,6 @@ public class Wallet {
         txOuts.add(toRecipient);
         txOuts.add(leftOver);
 
-        // fixme transaction id has to be sign
         Transaction transaction = new Transaction();
         transaction.txIns = unsignedTxIns;
         transaction.txOuts = txOuts;
@@ -108,5 +106,9 @@ public class Wallet {
         }
 
         return transaction;
+    }
+
+    public String getPublicKey() {
+        return ECDSAUtils.getStringFromKey(publicKey);
     }
 }
