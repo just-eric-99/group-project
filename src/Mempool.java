@@ -6,4 +6,8 @@ public class Mempool {
     public void addToMempool(Transaction transaction){
         mempool.add(transaction);
     }
+
+    public void updateMempool(ArrayList<Transaction> invalidTxs) {
+
+    }
 }

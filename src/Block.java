@@ -38,7 +38,7 @@ public class Block {
     }
 
     public static int getDifficulty() {
-        Block latestBlock = blockchain.get(blockchain.size() - 1);
+        Block latestBlock = Main.blockchain.get(Main.blockchain.size() - 1);
         if (latestBlock.index % difficultyAdjustmentInterval == 0 && latestBlock.index != 0) {
             return getAdjustedDifficulty(latestBlock);
         } else {
@@ -47,7 +47,7 @@ public class Block {
     }
 
     static int getAdjustedDifficulty(Block latestBlock) {
-        Block prevAdjustmentBlock = blockchain.get(blockchain.size() - difficultyAdjustmentInterval);
+        Block prevAdjustmentBlock = Main.blockchain.get(Main.blockchain.size() - difficultyAdjustmentInterval);
         long timeExpected = blockGenerationInterval * difficultyAdjustmentInterval;
         long timeTaken = latestBlock.timestamp - prevAdjustmentBlock.timestamp;
         System.out.println("timeExpected: " + timeExpected);
@@ -67,7 +67,7 @@ public class Block {
         int nonce = 0;
 
         String hash = calculateHash(index, previousHash, timestamp, data, nonce);
-        while (true) {
+        while (Main.mining) {
             assert prefix0 != null;
             if (hash.startsWith(prefix0)) {
                 return new Block(index, hash, previousHash, timestamp, data, diff, nonce);
@@ -75,7 +75,7 @@ public class Block {
                 nonce++;
                 hash = calculateHash(index, previousHash, timestamp, data, nonce);
             }
-        }
+        } return null;
     }
 
     public void generateGenesisBlock(){
@@ -83,47 +83,36 @@ public class Block {
     }
 
     static boolean isValidBlock(Block newBlock) {
-        Block previousBlock = blockchain.get(blockchain.size() - 1);
+        Block previousBlock = Main.blockchain.get(Main.blockchain.size() - 1);
+
         if (previousBlock.index + 1 != newBlock.index) {
             System.out.println("index not match!");
             return false;
-        }
-        else if (!previousBlock.hash.equals(newBlock.previousHash)) {
+        } else if (!previousBlock.hash.equals(newBlock.previousHash)) {
             System.out.println("previous hash not match!");
             return false;
-        }
-        else if (!calculateHash(newBlock).equals(newBlock.hash)) {
+        } else if (!calculateHash(newBlock).equals(newBlock.hash)) {
             System.out.println("hash not match!");
             return false;
-        }
-        else return true;
+        } else return true;
     }
 
-    static boolean isValidChain(ArrayList<Block> chain){
-        if(!isValidGenesis(chain.get(0))){
+    static boolean isValidChain(ArrayList<Block> chain) {
+        if (!isValidGenesis(chain.get(0))) {
             return false;
         }
-
-        for(int i=1; i<chain.size(); i++){
-            if(!isValidBlock(chain.get(i))){
-                return false;
-            }
-        }
-        return true;
+        return isValidBlock(chain.get(chain.size() - 1));
     }
 
-    private static boolean isValidGenesis(Block block){
-        return blockchain.get(0) == block;
+    private static boolean isValidGenesis(Block block) {
+        return Main.blockchain.get(0).toString().equals(block.toString());
     }
 
-    static void replaceChain(ArrayList<Block> newChain){
-        if(isValidChain(newChain) && newChain.size() > blockchain.size()){
+    static void replaceChain(ArrayList<Block> newChain) {
+        if (isValidChain(newChain) && newChain.size() > Main.blockchain.size()) {
             System.out.println("Received blockchain is valid. Replacing current blockchain with received blockchain");
-            blockchain = newChain;
-            //fixme
-            //broadcast latest
-        }
-        else{
+            Main.blockchain = newChain;
+        } else {
             System.out.println("Received blockchain invalid");
         }
     }
