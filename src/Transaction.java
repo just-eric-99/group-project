@@ -24,6 +24,7 @@ public class Transaction {
 //        this.txOuts = txOuts;
 //    }
 
+    //fixme txOut?? replace with current UTXOs?
     public String getTransactionId() {
         String txInContent = txIns.stream().map(txIn -> txIn.txOutId + txIn.txOutIndex).reduce("", (a, b) -> a+b);
         String txOutContent = txOuts.stream().map(txOut -> txOut.address + txOut.amount).reduce("", (a, b) -> a+b);
