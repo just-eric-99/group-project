@@ -99,7 +99,7 @@ public class Wallet {
         Transaction transaction = new Transaction();
         transaction.txIns = unsignedTxIns;
         transaction.txOuts = txOuts;
-        transaction.id = transaction.getTransactionId();
+        transaction.id = transaction.getTransactionId(transaction.txIns, transaction.txOuts);
 
         for(TxIn txin : transaction.txIns){
             txin.signature = Transaction.signTxIn(transaction, txin.txOutIndex, privateKey, refUTXOs);

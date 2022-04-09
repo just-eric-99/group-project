@@ -1,7 +1,6 @@
 import javafx.event.ActionEvent;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
-import javafx.scene.control.Button;
 
 public class GUI {
     public TextField amountInput;
@@ -13,8 +12,8 @@ public class GUI {
     private Main main;
 
     public void initialize(String myAddress, double balance, Main main){
-        this.myAddressInput = new TextField(myAddress);
-        this.balanceInput = new TextField(balance + "");
+        this.myAddressInput.setText(myAddress);
+        this.balanceInput.setText(balance + "");
         this.main = main;
     }
 
@@ -28,6 +27,7 @@ public class GUI {
     }
 
     public void appendLog(String blockString) {
+        System.out.println(blockString);
         log.appendText(blockString + "\n");
     }
 

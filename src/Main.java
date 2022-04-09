@@ -13,6 +13,8 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import org.apache.commons.lang3.SerializationUtils;
+import util.ECDSAUtils;
+import util.HashUtils;
 
 
 public class Main extends Application {
@@ -29,14 +31,14 @@ public class Main extends Application {
     Transaction coinbaseTransaction = new Transaction();
     public static ArrayList<Transaction> mempool = new ArrayList<>();
 
-    private GUI gui;
+    GUI gui;
 
     public static void main(String[] args) throws Exception {
         new Main().runApp();
     }
 
     @Override
-    public void start(Stage primaryStage) throws Exception {
+    public synchronized void start(Stage primaryStage) throws Exception {
         Parent root;
         FXMLLoader loader = new FXMLLoader();
         loader.setLocation(GUI.class.getResource("GUI.fxml"));
@@ -53,12 +55,14 @@ public class Main extends Application {
             }
         });
         primaryStage.show();
+        this.notifyAll();
     }
 
-    private void runApp() throws Exception {
+    private synchronized void runApp() throws Exception {
         Random rand = new Random();
         port = rand.nextInt(portRange) + 3000;
         initWallet();
+
 
         Platform.runLater(() -> {
             try {
@@ -68,9 +72,11 @@ public class Main extends Application {
             }
         });
 
+        while (gui == null) {
+            this.wait();
+        }
         initChain();
-        //mine();
-
+        mine();
         //minerWallet.pay("MEECAQAwEwYHKoZIzj0CAQYIKoZIzj0DAQcEJzAlAgEBBCBklO9a2Cra5bwKlatwjGja+HoohB6ZpjQsoQbmvYGT0Q\u003d\u003d", 1);
     }
 
@@ -93,15 +99,15 @@ public class Main extends Application {
                 int difficulty = Block.getDifficulty();
 
                 ArrayList<Transaction> currentTransactions = new ArrayList<>();
-                currentTransactions.add(0, coinbaseTransaction.getCoinbaseTransaction(String.valueOf(minerWallet.getPublicKey())));
+                currentTransactions.add(0, coinbaseTransaction.getCoinbaseTransaction(minerWallet.getPublicKey(), index));
                 data = new GsonBuilder().setPrettyPrinting().create().toJson(currentTransactions);
 
-                Block newBlock = Block.findBlock(index, previousHash, timestamp, data, difficulty);
+                Block newBlock = findBlock(index, previousHash, timestamp, data, difficulty);
                 //Add to blockchain
                 if (newBlock != null) {
                     blockchain.add(newBlock);
-                    String blockJson = new GsonBuilder().setPrettyPrinting().create().toJson(blockchain.get(blockchain.size() - 1)).replace("\n       ", "");
-                    System.out.println(blockJson);
+
+                    String blockJson = "Block: " + new GsonBuilder().setPrettyPrinting().create().toJson(blockchain.get(blockchain.size() - 1)).replace("\\n", "\n").replace("\\", "");
                     gui.appendLog(blockJson);
 
                     for (int i = 3000; i < 3000 + portRange; i++) {
@@ -148,18 +154,18 @@ public class Main extends Application {
         try {
             cSocket = srvSocket.accept();
         } catch (Exception e) {
-            System.out.println("No existing node found");
+            gui.appendLog("No existing node found");
         }
 
         if (cSocket != null) {
             receiveChain(cSocket);
-            System.out.println("Finished receiving");
+            gui.appendLog("Chain received");
         } else {
             Block genBlock = Block.generateGenesisBlock();
 
             blockchain.add(genBlock);
-            System.out.println("Genesis block created");
-            System.out.println(new GsonBuilder().setPrettyPrinting().create().toJson(genBlock).replace("\n       ", ""));
+            gui.appendLog("Genesis block created");
+            gui.appendLog("Block: " + new GsonBuilder().setPrettyPrinting().create().toJson(genBlock).replace("\n       ", ""));
             isMining.set(true);
         }
     }
@@ -182,12 +188,12 @@ public class Main extends Application {
                 isMining.set(false);
                 Packet cPacket = (Packet) SerializationUtils.deserialize(data);
                 // replace mempool and blockchain at the same time
-                Block.replaceChain(cPacket);
+                replaceChain(cPacket);
 
                 isMining.set(true);
             }
         } catch (Exception e) {
-            System.out.println("Someone connected");
+            gui.appendLog("Peer connected");
         }
         return socket;
     }
@@ -207,5 +213,33 @@ public class Main extends Application {
         blockchain = packet.getBlockchain();
         mempool = packet.getMempool();
         isMining.set(true);
+    }
+
+
+    //
+    public static Block findBlock(int index, String previousHash, long timestamp, String data, int diff) {
+        String prefix0 = HashUtils.getPrefix0(diff);
+        int nonce = 0;
+        String hash = Block.calculateHash(index, previousHash, timestamp, data, nonce);
+        while (Main.isMining.get()) {
+            assert prefix0 != null;
+            if (hash.startsWith(prefix0)) {
+                return new Block(index, hash, previousHash, timestamp, data, diff, nonce);
+            } else {
+                nonce++;
+                hash = Block.calculateHash(index, previousHash, timestamp, data, nonce);
+            }
+        }
+        return null;
+    }
+
+    void replaceChain(Packet packet) {
+        if (Block.isValidChain(packet.getBlockchain()) && packet.getBlockchain().size() > Main.blockchain.size()) {
+            gui.appendLog("Valid blockchain received. Replacing...");
+            Main.blockchain = packet.getBlockchain();
+            Main.mempool = packet.getMempool();
+        } else {
+            gui.appendLog("Received blockchain invalid");
+        }
     }
 }

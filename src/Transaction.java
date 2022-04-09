@@ -23,9 +23,18 @@ public class Transaction {
 //    }
 
     //fixme txOut?? replace with current UTXOs?
-    public String getTransactionId() {
-        String txInContent = txIns.stream().map(txIn -> txIn.txOutId + txIn.txOutIndex).reduce("", (a, b) -> a+b);
-        String txOutContent = txOuts.stream().map(txOut -> txOut.address + txOut.amount).reduce("", (a, b) -> a+b);
+    public String getTransactionId(ArrayList<TxIn> txIns, ArrayList<TxOut> txOuts) {
+//        String txInContent = txIns.stream().map(txIn -> txIn.txOutId + txIn.txOutIndex).reduce("", (a, b) -> a+b);
+//        String txOutContent = txOuts.stream().map(txOut -> txOut.address + txOut.amount).reduce("", (a, b) -> a+b);
+        String txInContent = "";
+        for (TxIn txIn : txIns) {
+            txInContent += txIn.txOutId + txIn.txOutIndex;
+        }
+
+        String txOutContent = "";
+        for (TxOut txOut : txOuts) {
+            txOutContent += txOut.address + txOut.amount;
+        }
 
         return HashUtils.getHashForStr(txInContent + txOutContent);
     }
@@ -84,23 +93,23 @@ public class Transaction {
         return null;
     }
 
-//    Transaction getCoinbaseTransaction (String address, int blockIndex) {
+    Transaction getCoinbaseTransaction (String address, int blockIndex) {
+        Transaction temp = new Transaction();
+        temp.txIns.add(new TxIn("", blockIndex,""));
+        temp.txOuts.add(new TxOut(address, 50));
+        temp.id = getTransactionId(temp.txIns, temp.txOuts);
+
+        return temp;
+    }
+
+//    Transaction getCoinbaseTransaction (String address) {
 //        Transaction temp = new Transaction();
-//        temp.txIns.add(new TxIn("", blockIndex,""));
-//        temp.txOuts.add(new TxOut(address, coinbaseAmount));
+//        temp.txIns = new ArrayList<>();
+//        temp.txOuts.add(new TxOut(address, 50));
 //        temp.id = getTransactionId();
 //
 //        return temp;
 //    }
-
-    Transaction getCoinbaseTransaction (String address) {
-        Transaction temp = new Transaction();
-        temp.txIns = new ArrayList<>();
-        temp.txOuts.add(new TxOut(address, 50));
-        temp.id = getTransactionId();
-
-        return temp;
-    }
 
     // fixme
     boolean validateTransaction (Transaction transaction, ArrayList<UTXO> UTXOList){

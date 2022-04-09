@@ -62,21 +62,6 @@ public class Block implements Serializable {
         }
     }
 
-    public static Block findBlock(int index, String previousHash, long timestamp, String data, int diff) {
-        String prefix0 = HashUtils.getPrefix0(diff);
-        int nonce = 0;
-        String hash = calculateHash(index, previousHash, timestamp, data, nonce);
-        while (Main.isMining.get()) {
-            assert prefix0 != null;
-            if (hash.startsWith(prefix0)) {
-                return new Block(index, hash, previousHash, timestamp, data, diff, nonce);
-            } else {
-                nonce++;
-                hash = calculateHash(index, previousHash, timestamp, data, nonce);
-            }
-        } return null;
-    }
-
     static Block generateGenesisBlock() {
         return new Block(0, "", "0", new Date().getTime(), "This is genesis block of hallelujah.", 6, 0);
     }
@@ -107,15 +92,6 @@ public class Block implements Serializable {
         return Main.blockchain.get(0).toString().equals(block.toString());
     }
 
-    static void replaceChain(Packet packet) {
-        if (isValidChain(packet.getBlockchain()) && packet.getBlockchain().size() > Main.blockchain.size()) {
-            System.out.println("Received blockchain is valid. Replacing current blockchain with received blockchain");
-            Main.blockchain = packet.getBlockchain();
-            Main.mempool = packet.getMempool();
-        } else {
-            System.out.println("Received blockchain invalid");
-        }
-    }
 
     @Override
     public String toString() {
