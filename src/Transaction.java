@@ -4,11 +4,7 @@ import util.HashUtils;
 import java.io.IOException;
 import java.io.Serializable;
 import java.security.*;
-import java.security.spec.EncodedKeySpec;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
-import java.util.Base64;
 
 import static util.ECDSAUtils.stringToKey;
 
@@ -19,7 +15,6 @@ public class Transaction implements Serializable {
     public ArrayList<TxOut> txOuts = new ArrayList<>();
 
 
-    //fixme txOut?? replace with current UTXOs?
     public String getTransactionId(ArrayList<TxIn> txIns, ArrayList<TxOut> txOuts) {
         String txInContent = txIns.stream().map(txIn -> txIn.txOutId + txIn.txOutIndex).reduce("", (a, b) -> a+b);
         String txOutContent = txOuts.stream().map(txOut -> txOut.address + txOut.amount).reduce("", (a, b) -> a+b);
@@ -27,7 +22,7 @@ public class Transaction implements Serializable {
         return HashUtils.getHashForStr(txInContent + txOutContent);
     }
     
-    public static String signTxIn(Transaction transaction, long txInIndex, PrivateKey privateKey, ArrayList<UTXO> UTXOList){
+    public static String signTxIn(Wallet wallet, Transaction transaction, long txInIndex, ArrayList<UTXO> UTXOList){
         TxIn txIn = transaction.txIns.get((int)txInIndex);
         String dataToSign = transaction.id;
         UTXO referencedUTXO = findUTXO(txIn.txOutId, txIn.txOutIndex, UTXOList);
@@ -42,12 +37,12 @@ public class Transaction implements Serializable {
             System.out.println("Trying to sign an input with private key that does not match the address that is referenced in txIn");
         }
 
-        String signature = ECDSAUtils.signECDSA(privateKey, dataToSign);
+        String signature = ECDSAUtils.signECDSA(wallet.getPrivateKey(), dataToSign);
 
         return HashUtils.byteToHex(signature.getBytes());
     }
 
-    public ArrayList<UTXO> updateUTXO(ArrayList<Transaction> txs, ArrayList<UTXO> currentUTXOs) {
+    public static ArrayList<UTXO> updateUTXO(ArrayList<Transaction> txs, ArrayList<UTXO> currentUTXOs) {
         ArrayList<UTXO> newUTXOs = new ArrayList<>();
         ArrayList<UTXO> usedTxOuts = new ArrayList<>();
         ArrayList<UTXO> resultingUTXOs = new ArrayList<>();
@@ -59,7 +54,7 @@ public class Transaction implements Serializable {
                 newUTXOs.add(new UTXO(tx.id, i[0], txOut.address, txOut.amount));
                 i[0] = i[0] + 1;
             });
-            // add to usedUTXOS
+
             tx.txIns.forEach(txIn -> usedTxOuts.add(new UTXO(txIn.txOutId, txIn.txOutIndex, "", 0)));
         }
 
@@ -98,6 +93,7 @@ public class Transaction implements Serializable {
         return true;
     }
 
+    // fixme
     boolean validateTxIn(TxIn txIn, Transaction transaction, ArrayList<UTXO> UTXOList) throws GeneralSecurityException, IOException{
         UTXO referencedTxOut = null;
 

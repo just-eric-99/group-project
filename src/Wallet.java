@@ -70,7 +70,7 @@ public class Wallet {
     }
 
     public Transaction pay(String address, double amount) {
-        if (getBalance() < amount) {
+        if (this.getBalance() < amount) {
             System.out.println("Insufficient fund to send transaction");
             return null;
         }
@@ -89,7 +89,6 @@ public class Wallet {
             if (total > amount) break;
         }
 
-        // send amount to address
         ArrayList<TxOut> txOuts = new ArrayList<>();
         TxOut toRecipient = new TxOut(address, amount);
         TxOut leftOver = new TxOut(ECDSAUtils.getStringFromKey(this.publicKey), total - amount);
@@ -102,7 +101,7 @@ public class Wallet {
         transaction.id = transaction.getTransactionId(transaction.txIns, transaction.txOuts);
 
         for(TxIn txin : transaction.txIns){
-            txin.signature = Transaction.signTxIn(transaction, txin.txOutIndex, privateKey, refUTXOs);
+            txin.signature = Transaction.signTxIn(this, transaction, txin.txOutIndex, refUTXOs);
         }
 
         return transaction;
@@ -110,5 +109,9 @@ public class Wallet {
 
     public String getPublicKey() {
         return ECDSAUtils.getStringFromKey(publicKey);
+    }
+
+    public PrivateKey getPrivateKey() {
+        return privateKey;
     }
 }

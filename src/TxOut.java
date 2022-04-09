@@ -1,4 +1,6 @@
-public class TxOut {
+import java.io.Serializable;
+
+public class TxOut implements Serializable {
     public String address;
     public double amount;
 

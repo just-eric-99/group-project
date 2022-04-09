@@ -1,4 +1,6 @@
-public class TxIn {
+import java.io.Serializable;
+
+public class TxIn implements Serializable {
     public String txOutId;
     public long txOutIndex;
     public String signature;

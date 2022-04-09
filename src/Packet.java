@@ -19,4 +19,8 @@ public class Packet implements Serializable {
     public ArrayList<Block> getBlockchain() {
         return blockchain;
     }
+
+    public ArrayList<UTXO> getUtxos() {
+        return utxos;
+    }
 }

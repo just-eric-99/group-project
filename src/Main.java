@@ -13,7 +13,6 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import org.apache.commons.lang3.SerializationUtils;
-import util.ECDSAUtils;
 import util.HashUtils;
 
 
@@ -76,8 +75,6 @@ public class Main extends Application {
             this.wait();
         }
         initChain();
-        mine();
-        //minerWallet.pay("MEECAQAwEwYHKoZIzj0CAQYIKoZIzj0DAQcEJzAlAgEBBCBklO9a2Cra5bwKlatwjGja+HoohB6ZpjQsoQbmvYGT0Q\u003d\u003d", 1);
     }
 
     private void initWallet() throws Exception {
@@ -100,19 +97,25 @@ public class Main extends Application {
 
                 ArrayList<Transaction> currentTransactions = new ArrayList<>();
                 currentTransactions.add(0, coinbaseTransaction.getCoinbaseTransaction(minerWallet.getPublicKey(), index));
+                currentTransactions.addAll(mempool);
+
                 data = new GsonBuilder().setPrettyPrinting().create().toJson(currentTransactions);
 
                 Block newBlock = findBlock(index, previousHash, timestamp, data, difficulty);
                 //Add to blockchain
                 if (newBlock != null) {
                     blockchain.add(newBlock);
+                    utxos = Transaction.updateUTXO(currentTransactions, utxos);
+                    gui.updateBalanceInput(minerWallet.getBalance() + "");
 
                     String blockJson = "Block: " + new GsonBuilder().setPrettyPrinting().create().toJson(blockchain.get(blockchain.size() - 1)).replace("\\n", "\n").replace("\\", "");
                     gui.appendLog(blockJson);
 
+                    mempool.removeAll(currentTransactions);
+
                     for (int i = 3000; i < 3000 + portRange; i++) {
                         if (i != port) {
-                            Packet packet = new Packet(blockchain, mempool);
+                            Packet packet = new Packet(blockchain, mempool, utxos);
                             try {
                                 broadcast(SerializationUtils.serialize(packet), i);
                             } catch (Exception e) {
@@ -165,7 +168,7 @@ public class Main extends Application {
 
             blockchain.add(genBlock);
             gui.appendLog("Genesis block created");
-            gui.appendLog("Block: " + new GsonBuilder().setPrettyPrinting().create().toJson(genBlock).replace("\n       ", ""));
+            gui.appendLog("Block: " + new GsonBuilder().setPrettyPrinting().create().toJson(genBlock).replace("\\n", "\n").replace("\\", ""));
             isMining.set(true);
         }
     }
@@ -201,10 +204,9 @@ public class Main extends Application {
         return socket;
     }
 
-    //TCP
     private void sendChain(Socket soc) throws Exception {
         ObjectOutputStream out = new ObjectOutputStream(soc.getOutputStream());
-        Packet packet = new Packet(blockchain, mempool);
+        Packet packet = new Packet(blockchain, mempool, utxos);
         out.writeObject(packet);
     }
 
@@ -220,8 +222,6 @@ public class Main extends Application {
         isMining.set(true);
     }
 
-
-    //
     public static Block findBlock(int index, String previousHash, long timestamp, String data, int diff) {
         String prefix0 = HashUtils.getPrefix0(diff);
         int nonce = 0;
