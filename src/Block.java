@@ -9,8 +9,6 @@ public class Block implements Serializable {
     static int difficultyAdjustmentInterval = 10;
     static long blockGenerationInterval = 30000;
 
-    public static ArrayList<UTXO> utxos = new ArrayList<>();
-
     int index;
     String hash;
     String previousHash;

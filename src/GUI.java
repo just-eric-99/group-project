@@ -11,7 +11,7 @@ public class GUI {
     public TextArea history;
     private Main main;
 
-    public void initialize(String myAddress, double balance, Main main){
+    public void initialize(String myAddress, double balance, Main main) {
         this.myAddressInput.setText(myAddress);
         this.balanceInput.setText(balance + "");
         this.main = main;
@@ -23,7 +23,6 @@ public class GUI {
 
     public void mineButton(ActionEvent actionEvent) {
         main.mine();
-
     }
 
     public void appendLog(String blockString) {

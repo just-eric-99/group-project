@@ -24,12 +24,13 @@ public class Main extends Application {
     private
     int port;
     int portRange = 2000;
-    Wallet minerWallet;
+    public Wallet minerWallet;
 
     public static final AtomicBoolean isMining = new AtomicBoolean(false);
     public static ArrayList<Block> blockchain = new ArrayList<>();
     Transaction coinbaseTransaction = new Transaction();
-    public static ArrayList<Transaction> mempool = new ArrayList<>();
+    public ArrayList<Transaction> mempool = new ArrayList<>();
+    public static ArrayList<UTXO> utxos = new ArrayList<>();
 
     GUI gui;
 
@@ -62,7 +63,6 @@ public class Main extends Application {
         Random rand = new Random();
         port = rand.nextInt(portRange) + 3000;
         initWallet();
-
 
         Platform.runLater(() -> {
             try {
@@ -170,8 +170,7 @@ public class Main extends Application {
         }
     }
 
-    //UDP
-    private void broadcast(byte[] bytes, int port) throws Exception {
+    public void broadcast(byte[] bytes, int port) throws Exception {
         DatagramPacket packet = new DatagramPacket(bytes, bytes.length, InetAddress.getLocalHost(), port);
         socket.send(packet);
     }
@@ -189,8 +188,12 @@ public class Main extends Application {
                 Packet cPacket = (Packet) SerializationUtils.deserialize(data);
                 // replace mempool and blockchain at the same time
                 replaceChain(cPacket);
-
                 isMining.set(true);
+            }
+
+            if (SerializationUtils.deserialize(data) instanceof Transaction) {
+                Transaction cTx = (Transaction) SerializationUtils.deserialize(data);
+                mempool.add(cTx);
             }
         } catch (Exception e) {
             gui.appendLog("Peer connected");
@@ -209,9 +212,11 @@ public class Main extends Application {
         isMining.set(false);
         ObjectInputStream in = new ObjectInputStream(soc.getInputStream());
         Object inObject = in.readObject();
-        Packet packet = (Packet) inObject;
-        blockchain = packet.getBlockchain();
-        mempool = packet.getMempool();
+        Packet rPacket = (Packet) inObject;
+        blockchain = rPacket.getBlockchain();
+        mempool = rPacket.getMempool();
+        utxos = rPacket.getUtxos();
+
         isMining.set(true);
     }
 
@@ -234,10 +239,12 @@ public class Main extends Application {
     }
 
     void replaceChain(Packet packet) {
-        if (Block.isValidChain(packet.getBlockchain()) && packet.getBlockchain().size() > Main.blockchain.size()) {
+        if (Block.isValidChain(packet.getBlockchain()) && packet.getBlockchain().size() > blockchain.size()) {
             gui.appendLog("Valid blockchain received. Replacing...");
-            Main.blockchain = packet.getBlockchain();
-            Main.mempool = packet.getMempool();
+            blockchain = packet.getBlockchain();
+            mempool = packet.getMempool();
+            utxos = packet.getUtxos();
+            gui.updateBalanceInput(minerWallet.getBalance() + "");
         } else {
             gui.appendLog("Received blockchain invalid");
         }

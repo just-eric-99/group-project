@@ -1,4 +1,6 @@
-public class UTXO {
+import java.io.Serializable;
+
+public class UTXO implements Serializable {
     String txOutId;
     long txOutIndex;
     String address;

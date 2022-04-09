@@ -2,6 +2,7 @@ import util.ECDSAUtils;
 import util.HashUtils;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.security.*;
 import java.security.spec.EncodedKeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
@@ -11,30 +12,17 @@ import java.util.Base64;
 
 import static util.ECDSAUtils.stringToKey;
 
-public class Transaction {
+public class Transaction implements Serializable {
 
     public String id;
     public ArrayList<TxIn> txIns = new ArrayList<>();
     public ArrayList<TxOut> txOuts = new ArrayList<>();
 
-//    public Transaction(ArrayList<TxIn> txIns, ArrayList<TxOut> txOuts){
-//        this.txIns = txIns;
-//        this.txOuts = txOuts;
-//    }
 
     //fixme txOut?? replace with current UTXOs?
     public String getTransactionId(ArrayList<TxIn> txIns, ArrayList<TxOut> txOuts) {
-//        String txInContent = txIns.stream().map(txIn -> txIn.txOutId + txIn.txOutIndex).reduce("", (a, b) -> a+b);
-//        String txOutContent = txOuts.stream().map(txOut -> txOut.address + txOut.amount).reduce("", (a, b) -> a+b);
-        String txInContent = "";
-        for (TxIn txIn : txIns) {
-            txInContent += txIn.txOutId + txIn.txOutIndex;
-        }
-
-        String txOutContent = "";
-        for (TxOut txOut : txOuts) {
-            txOutContent += txOut.address + txOut.amount;
-        }
+        String txInContent = txIns.stream().map(txIn -> txIn.txOutId + txIn.txOutIndex).reduce("", (a, b) -> a+b);
+        String txOutContent = txOuts.stream().map(txOut -> txOut.address + txOut.amount).reduce("", (a, b) -> a+b);
 
         return HashUtils.getHashForStr(txInContent + txOutContent);
     }
@@ -48,11 +36,10 @@ public class Transaction {
             throw new Error();
         }
 
-        String referencedAddress =referencedUTXO.address;
+        String referencedAddress = referencedUTXO.address;
 
-        if(!ECDSAUtils.getStringFromKey(privateKey).equals(referencedAddress)){
+        if(!wallet.getPublicKey().equals(referencedAddress)){
             System.out.println("Trying to sign an input with private key that does not match the address that is referenced in txIn");
-            throw new Error();
         }
 
         String signature = ECDSAUtils.signECDSA(privateKey, dataToSign);
@@ -76,9 +63,7 @@ public class Transaction {
             tx.txIns.forEach(txIn -> usedTxOuts.add(new UTXO(txIn.txOutId, txIn.txOutIndex, "", 0)));
         }
 
-        currentUTXOs.stream().filter(x -> findUTXO(x.txOutId, x.txOutIndex, usedTxOuts) != null).forEach(resultingUTXOs::add);
-        // ==  null or != null ???
-        //from currentUTXOs, filter out those that are in UsedTxOuts, then add to resultingUTXOs.
+        currentUTXOs.stream().filter(x -> findUTXO(x.txOutId, x.txOutIndex, usedTxOuts) == null).forEach(resultingUTXOs::add);
         resultingUTXOs.addAll(newUTXOs);
 
         return resultingUTXOs;
@@ -101,15 +86,6 @@ public class Transaction {
 
         return temp;
     }
-
-//    Transaction getCoinbaseTransaction (String address) {
-//        Transaction temp = new Transaction();
-//        temp.txIns = new ArrayList<>();
-//        temp.txOuts.add(new TxOut(address, 50));
-//        temp.id = getTransactionId();
-//
-//        return temp;
-//    }
 
     // fixme
     boolean validateTransaction (Transaction transaction, ArrayList<UTXO> UTXOList){

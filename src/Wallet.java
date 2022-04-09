@@ -54,7 +54,7 @@ public class Wallet {
     public ArrayList<UTXO> findMyUTXO() {
         ArrayList<UTXO> myUTXOs = new ArrayList<>();
         String myAddress = ECDSAUtils.getStringFromKey(publicKey);
-        for (UTXO utxo : Block.utxos){
+        for (UTXO utxo : Main.utxos){
             if (utxo.getAddress().equals(myAddress)){
                 myUTXOs.add(utxo);
             }
