@@ -92,7 +92,7 @@ public class Main extends Application {
                 int index = lastBlock.index + 1;
                 String previousHash = lastBlock.hash;
                 long timestamp = new Date().getTime();
-                //Add transactions later ...
+
                 String data = "";
                 int difficulty = Block.getDifficulty();
 
@@ -103,14 +103,15 @@ public class Main extends Application {
                 data = new GsonBuilder().setPrettyPrinting().create().toJson(currentTransactions);
 
                 Block newBlock = findBlock(index, previousHash, timestamp, data, difficulty);
-                //Add to blockchain
+
                 if (newBlock != null) {
                     blockchain.add(newBlock);
                     utxos = Transaction.updateUTXO(currentTransactions, utxos);
                     gui.updateBalanceInput(minerWallet.getBalance() + "");
 
                     String blockJson = "Block: " + new GsonBuilder().setPrettyPrinting().create().toJson(blockchain.get(blockchain.size() - 1)).replace("\\n", "\n").replace("\\", "");
-                    gui.appendLog(blockJson);
+                    gui.appendHistory(blockJson);
+                    gui.appendLog("New block found");
 
                     mempool.removeAll(currentTransactions);
 
@@ -169,7 +170,7 @@ public class Main extends Application {
 
             blockchain.add(genBlock);
             gui.appendLog("Genesis block created");
-            gui.appendLog("Block: " + new GsonBuilder().setPrettyPrinting().create().toJson(genBlock).replace("\\n", "\n").replace("\\", ""));
+            gui.appendHistory("Block: " + new GsonBuilder().setPrettyPrinting().create().toJson(genBlock).replace("\\n", "\n").replace("\\", ""));
             isMining.set(true);
         }
     }
@@ -190,7 +191,6 @@ public class Main extends Application {
             if (SerializationUtils.deserialize(data) instanceof Packet) {
                 isMining.set(false);
                 Packet cPacket = (Packet) SerializationUtils.deserialize(data);
-                // replace mempool and blockchain at the same time
                 replaceChain(cPacket);
                 isMining.set(true);
             }
@@ -223,10 +223,11 @@ public class Main extends Application {
         isMining.set(true);
     }
 
-    public static Block findBlock(int index, String previousHash, long timestamp, String data, int diff) {
+    public Block findBlock(int index, String previousHash, long timestamp, String data, int diff) {
         String prefix0 = HashUtils.getPrefix0(diff);
         int nonce = 0;
         String hash = Block.calculateHash(index, previousHash, timestamp, data, nonce);
+        gui.appendLog("Mining new block...");
         while (Main.isMining.get()) {
             assert prefix0 != null;
             if (hash.startsWith(prefix0)) {

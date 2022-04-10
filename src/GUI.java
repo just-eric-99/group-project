@@ -54,6 +54,12 @@ public class GUI {
         log.appendText(str + "\n");
     }
 
+    public void appendHistory(String str) {
+        System.out.println(str);
+        history.appendText(str + "\n");
+    }
+
+
     public void updateBalanceInput(String balance) {
         balanceInput.setText(balance);
     }

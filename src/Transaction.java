@@ -31,13 +31,13 @@ public class Transaction implements Serializable {
         UTXO referencedUTXO = findUTXO(txIn.txOutId, txIn.txOutIndex, UTXOList);
         if(referencedUTXO == null){
             System.out.println("Could not find referenced txOut");
-            throw new Error();
+            return "";
         }
 
         String referencedAddress = referencedUTXO.address;
 
         if(!wallet.getPublicKey().equals(referencedAddress)){
-            System.out.println("Trying to sign an input with private key that does not match the address that is referenced in txIn");
+            System.out.println("Signing txIn address not match");
         }
 
         return ECDSAUtils.signECDSA(wallet.getPrivateKey(), transaction.id);
@@ -50,7 +50,7 @@ public class Transaction implements Serializable {
 
         for(Transaction tx : txs) {
             final int[] i = {0};
-            // add to newUTXOs
+
             tx.txOuts.forEach(txOut -> {
                 newUTXOs.add(new UTXO(tx.id, i[0], txOut.address, txOut.amount));
                 i[0] = i[0] + 1;
