@@ -67,13 +67,13 @@ public class Block implements Serializable {
         Block previousBlock = Main.blockchain.get(Main.blockchain.size() - 1);
 
         if (previousBlock.index + 1 != newBlock.index) {
-            System.out.println("index not match!");
+            System.out.println("Index not match");
             return false;
         } else if (!previousBlock.hash.equals(newBlock.previousHash)) {
-            System.out.println("previous hash not match!");
+            System.out.println("Previous hash not match");
             return false;
         } else if (!calculateHash(newBlock).equals(newBlock.hash)) {
-            System.out.println("hash not match!");
+            System.out.println("Hash not match");
             return false;
         } else return true;
     }

@@ -19,9 +19,29 @@ public class GUI {
     }
 
     public void payButton(ActionEvent actionEvent) throws Exception {
-        Transaction tx = main.minerWallet.pay(toAddressInput.getText(), Double.parseDouble(amountInput.getText()));
-        for (int i = 3000; i < 3000 + main.portRange; i++) {
-            main.broadcast(SerializationUtils.serialize(tx), i);
+        if (toAddressInput.getText().isEmpty()){
+            appendLog("Address not provided.");
+            return;
+        }
+
+        if (amountInput.getText().isEmpty()){
+            appendLog("Amount not provided.");
+            return;
+        }
+
+        double amount = Double.parseDouble(amountInput.getText());
+        if (main.minerWallet.getBalance() < amount) {
+            appendLog("Insufficient amount.");
+        }
+        Transaction tx = main.minerWallet.pay(toAddressInput.getText(), amount);
+
+        if(tx != null) {
+            for (int i = 3000; i < 3000 + main.portRange; i++) {
+                main.broadcast(SerializationUtils.serialize(tx), i);
+            }
+            appendLog("Transaction processed successfully.");
+        } else {
+            appendLog("Transaction cannot be processed. Please try again.");
         }
     }
 
@@ -29,13 +49,12 @@ public class GUI {
         main.mine();
     }
 
-    public void appendLog(String blockString) {
-        System.out.println(blockString);
-        log.appendText(blockString + "\n");
+    public void appendLog(String str) {
+        System.out.println(str);
+        log.appendText(str + "\n");
     }
 
     public void updateBalanceInput(String balance) {
         balanceInput.setText(balance);
     }
-
 }

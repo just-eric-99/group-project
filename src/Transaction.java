@@ -23,8 +23,11 @@ public class Transaction implements Serializable {
     }
     
     public static String signTxIn(Wallet wallet, Transaction transaction, long txInIndex, ArrayList<UTXO> UTXOList){
-        TxIn txIn = transaction.txIns.get((int)txInIndex);
-        String dataToSign = transaction.id;
+        if(txInIndex >= transaction.txIns.size()){
+            System.out.println("Invalid txOut index");
+            return "";
+        }
+        TxIn txIn = transaction.txIns.get((int) txInIndex);
         UTXO referencedUTXO = findUTXO(txIn.txOutId, txIn.txOutIndex, UTXOList);
         if(referencedUTXO == null){
             System.out.println("Could not find referenced txOut");
@@ -37,9 +40,7 @@ public class Transaction implements Serializable {
             System.out.println("Trying to sign an input with private key that does not match the address that is referenced in txIn");
         }
 
-        String signature = ECDSAUtils.signECDSA(wallet.getPrivateKey(), dataToSign);
-
-        return HashUtils.byteToHex(signature.getBytes());
+        return ECDSAUtils.signECDSA(wallet.getPrivateKey(), transaction.id);
     }
 
     public static ArrayList<UTXO> updateUTXO(ArrayList<Transaction> txs, ArrayList<UTXO> currentUTXOs) {
@@ -81,20 +82,7 @@ public class Transaction implements Serializable {
 
         return temp;
     }
-
-    // fixme
-    boolean validateTransaction (Transaction transaction, ArrayList<UTXO> UTXOList){
-        for(UTXO utxo : UTXOList){
-
-        }
-
-
-
-        return true;
-    }
-
-    // fixme
-    boolean validateTxIn(TxIn txIn, Transaction transaction, ArrayList<UTXO> UTXOList) throws GeneralSecurityException, IOException{
+    public boolean validateTxIn(TxIn txIn, ArrayList<UTXO> UTXOList) throws GeneralSecurityException, IOException{
         UTXO referencedTxOut = null;
 
         for(UTXO utxo : UTXOList){
@@ -109,7 +97,7 @@ public class Transaction implements Serializable {
 
         String address = referencedTxOut.address;
 
-        if(!ECDSAUtils.verifyECDSA((PublicKey) stringToKey(address, false), txIn.signature, "")){
+        if(!ECDSAUtils.verifyECDSA((PublicKey) stringToKey(address, false), txIn.signature, this.id)){
             System.out.println("Invalid txIn signature");
             return false;
         }

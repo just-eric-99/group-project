@@ -47,6 +47,7 @@ public class Main extends Application {
         gui.initialize(minerWallet.getPublicKey(), minerWallet.getBalance(), this);
         primaryStage.setScene(new Scene(root, 600, 400));
         primaryStage.setTitle("Blockchain");
+        primaryStage.setResizable(false);
         primaryStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
             @Override
             public void handle(WindowEvent t) {
@@ -132,12 +133,12 @@ public class Main extends Application {
     private void initChain() throws Exception {
         socket = new DatagramSocket(port);
         srvSocket = new ServerSocket(port);
-        srvSocket.setSoTimeout(5000);
+        srvSocket.setSoTimeout(1000);
 
         System.out.println("My port: " + port);
 
         Thread udp = new Thread(() -> {
-            Socket s = null;
+            Socket s;
             while (true) {
                 try {
                     s = listen();

@@ -1,6 +1,7 @@
 import com.google.gson.Gson;
 import util.ECDSAUtils;
 
+import java.io.IOException;
 import java.security.*;
 import java.util.*;
 import java.io.File;
@@ -69,9 +70,8 @@ public class Wallet {
         return keyFile.delete();
     }
 
-    public Transaction pay(String address, double amount) {
+    public Transaction pay(String address, double amount) throws GeneralSecurityException, IOException {
         if (this.getBalance() < amount) {
-            System.out.println("Insufficient fund to send transaction");
             return null;
         }
 
