@@ -43,6 +43,8 @@ public class GUI {
                     e.printStackTrace();
                 }
             });
+            main.mempool.add(tx);
+
             appendLog("Transaction processed successfully.");
         }  else {
             appendLog("Transaction cannot be processed. Please try again.");
