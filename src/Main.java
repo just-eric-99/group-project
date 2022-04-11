@@ -16,7 +16,7 @@ import org.apache.commons.lang3.SerializationUtils;
 import util.HashUtils;
 
 
-public class Main extends Application {
+public class Main extends Application implements Serializable {
 
     private DatagramSocket socket;
     private ServerSocket srvSocket;
