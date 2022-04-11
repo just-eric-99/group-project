@@ -22,12 +22,7 @@ public class Transaction implements Serializable {
         return HashUtils.getHashForStr(txInContent + txOutContent);
     }
     
-    public static String signTxIn(Wallet wallet, Transaction transaction, long txInIndex, ArrayList<UTXO> UTXOList){
-        if(txInIndex >= transaction.txIns.size()){
-            System.out.println("Invalid txOut index");
-            return "";
-        }
-        TxIn txIn = transaction.txIns.get((int) txInIndex);
+    public static String signTxIn(Wallet wallet, Transaction transaction, TxIn txIn, ArrayList<UTXO> UTXOList){
         UTXO referencedUTXO = findUTXO(txIn.txOutId, txIn.txOutIndex, UTXOList);
         if(referencedUTXO == null){
             System.out.println("Could not find referenced txOut");

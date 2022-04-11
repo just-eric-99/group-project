@@ -91,16 +91,14 @@ public class Main extends Application {
                 Block lastBlock = blockchain.get(blockchain.size() - 1);
                 int index = lastBlock.index + 1;
                 String previousHash = lastBlock.hash;
-                long timestamp = new Date().getTime();
-
-                String data = "";
+                long timestamp = System.currentTimeMillis() / 1000L;
                 int difficulty = Block.getDifficulty();
 
                 ArrayList<Transaction> currentTransactions = new ArrayList<>();
                 currentTransactions.add(0, coinbaseTransaction.getCoinbaseTransaction(minerWallet.getPublicKey(), index));
                 currentTransactions.addAll(mempool);
 
-                data = new GsonBuilder().setPrettyPrinting().create().toJson(currentTransactions);
+                String data = new GsonBuilder().setPrettyPrinting().create().toJson(currentTransactions);
 
                 Block newBlock = findBlock(index, previousHash, timestamp, data, difficulty);
 
@@ -188,15 +186,16 @@ public class Main extends Application {
         Socket socket = new Socket(packet.getAddress(), packet.getPort());
 
         try {
-            if (SerializationUtils.deserialize(data) instanceof Packet) {
+            Object obj = SerializationUtils.deserialize(data);
+            if (obj instanceof Packet) {
                 isMining.set(false);
-                Packet cPacket = (Packet) SerializationUtils.deserialize(data);
+                Packet cPacket = (Packet) obj;
                 replaceChain(cPacket);
                 isMining.set(true);
             }
 
-            if (SerializationUtils.deserialize(data) instanceof Transaction) {
-                Transaction cTx = (Transaction) SerializationUtils.deserialize(data);
+            if (obj instanceof Transaction) {
+                Transaction cTx = (Transaction) obj;
                 mempool.add(cTx);
             }
         } catch (Exception e) {
@@ -219,7 +218,6 @@ public class Main extends Application {
         blockchain = rPacket.getBlockchain();
         mempool = rPacket.getMempool();
         utxos = rPacket.getUtxos();
-
         isMining.set(true);
     }
 
@@ -228,7 +226,7 @@ public class Main extends Application {
         int nonce = 0;
         String hash = Block.calculateHash(index, previousHash, timestamp, data, nonce);
         gui.appendLog("Mining new block...");
-        while (Main.isMining.get()) {
+        while (isMining.get()) {
             assert prefix0 != null;
             if (hash.startsWith(prefix0)) {
                 return new Block(index, hash, previousHash, timestamp, data, diff, nonce);

@@ -101,7 +101,7 @@ public class Wallet {
         transaction.id = transaction.getTransactionId(transaction.txIns, transaction.txOuts);
 
         for(TxIn txin : transaction.txIns){
-            txin.signature = Transaction.signTxIn(this, transaction, txin.txOutIndex, refUTXOs);
+            txin.signature = Transaction.signTxIn(this, transaction, txin, refUTXOs);
             if(!transaction.validateTxIn(txin, myUTXOs)){
                 return null;
             };

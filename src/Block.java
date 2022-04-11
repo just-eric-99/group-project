@@ -60,7 +60,7 @@ public class Block implements Serializable {
     }
 
     static Block generateGenesisBlock() {
-        return new Block(0, "", "0", new Date().getTime(), "This is COMP4137 genesis block", 6, 0);
+        return new Block(0, "", "", System.currentTimeMillis() / 1000L, "This is COMP4137 genesis block", 6, 0);
     }
 
     static boolean isValidBlock(Block newBlock) {
