@@ -36,16 +36,21 @@ public class GUI {
         Transaction tx = main.minerWallet.pay(toAddressInput.getText(), amount);
 
         if(tx != null) {
-            for (int i = 3000; i < 3000 + main.portRange; i++) {
-                main.broadcast(SerializationUtils.serialize(tx), i);
-            }
+            main.socketList.forEach(socket -> {
+                try {
+                    main.sendTransaction(tx, socket);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            });
             appendLog("Transaction processed successfully.");
-        } else {
+        }  else {
             appendLog("Transaction cannot be processed. Please try again.");
         }
     }
 
     public void mineButton(ActionEvent actionEvent) {
+        main.isMining.set(true);
         main.mine();
     }
 

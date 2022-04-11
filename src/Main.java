@@ -12,7 +12,6 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
-import org.apache.commons.lang3.SerializationUtils;
 import util.HashUtils;
 
 
@@ -20,16 +19,17 @@ public class Main extends Application implements Serializable {
 
     private DatagramSocket socket;
     private ServerSocket srvSocket;
-    private
     int port;
     int portRange = 2000;
     public Wallet minerWallet;
 
-    public static final AtomicBoolean isMining = new AtomicBoolean(false);
+    public final AtomicBoolean isMining = new AtomicBoolean(false);
     public static ArrayList<Block> blockchain = new ArrayList<>();
     Transaction coinbaseTransaction = new Transaction();
     public ArrayList<Transaction> mempool = new ArrayList<>();
     public static ArrayList<UTXO> utxos = new ArrayList<>();
+
+    public final ArrayList<Socket> socketList = new ArrayList<>();
 
     GUI gui;
 
@@ -85,7 +85,7 @@ public class Main extends Application implements Serializable {
     public void mine() {
         Thread mine = new Thread(() -> {
             while (true) {
-                if (!isMining.get()) {
+                if(!isMining.get()){
                     continue;
                 }
                 Block lastBlock = blockchain.get(blockchain.size() - 1);
@@ -113,15 +113,14 @@ public class Main extends Application implements Serializable {
 
                     mempool.removeAll(currentTransactions);
 
-                    for (int i = 3000; i < 3000 + portRange; i++) {
-                        if (i != port) {
-                            Packet packet = new Packet(blockchain, mempool, utxos);
+                    synchronized (socketList) {
+                        socketList.parallelStream().forEach(cSocket -> {
                             try {
-                                broadcast(SerializationUtils.serialize(packet), i);
+                                sendChain(cSocket);
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
-                        }
+                        });
                     }
                 }
             }
@@ -132,40 +131,79 @@ public class Main extends Application implements Serializable {
     private void initChain() throws Exception {
         socket = new DatagramSocket(port);
         srvSocket = new ServerSocket(port);
-        srvSocket.setSoTimeout(1000);
 
-        System.out.println("My port: " + port);
+        for (int i = 3000; i < 3000 + portRange; i++) {
+            send("Requesting chain".getBytes(), InetAddress.getLocalHost(), i);
+        }
 
+        socket.setSoTimeout(1000);
+        while (true) {
+            try {
+                UDPPacket udpPacket = listen();
+                if (udpPacket.getData().equals("Response")) {
+                    socketList.add(new Socket(udpPacket.getAddress(), udpPacket.getPort()));
+                }
+            } catch (Exception e) {
+                break;
+            }
+        }
+
+        socket.setSoTimeout(0);
         Thread udp = new Thread(() -> {
-            Socket s;
             while (true) {
                 try {
-                    s = listen();
-                    sendChain(s);
+                    UDPPacket udpPacket = listen();
+                    if (udpPacket.getData().equals("Requesting chain")) {
+                        send("Response".getBytes(), udpPacket.getAddress(), udpPacket.getPort());
+                    }
                 } catch (Exception e) {
+
                 }
             }
         });
         udp.start();
 
-        for (int i = 3000; i < 3000 + portRange; i++) {
-            if (i != port)
-                broadcast("Requesting chain".getBytes(), i);
+        for (Socket s : socketList){
+            new Thread(() -> {
+                while (true) {
+                    try {
+                        receive(s);
+                    } catch (Exception e) {
+
+                    }
+                }
+            }).start();
         }
 
-        Socket cSocket = null;
-        try {
-            cSocket = srvSocket.accept();
-        } catch (Exception e) {
+        Thread server = new Thread(() -> {
+            while (true) {
+                try {
+                    Socket cSocket = srvSocket.accept();
+                    synchronized (socketList) {
+                        socketList.add(cSocket);
+                    }
+                    sendChain(cSocket);
+                    Thread t  = new Thread(() -> {
+                        while (true) {
+                            try {
+                                receive(cSocket);
+                            } catch (Exception e){
+
+                            }
+                        }
+                    });
+                    t.start();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        server.start();
+
+
+        if(socketList.size() == 0) {
             gui.appendLog("No existing node found");
-        }
-
-        if (cSocket != null) {
-            receiveChain(cSocket);
-            gui.appendLog("Chain received");
-        } else {
             Block genBlock = Block.generateGenesisBlock();
-
             blockchain.add(genBlock);
             gui.appendLog("Genesis block created");
             gui.appendHistory("Block: " + new GsonBuilder().setPrettyPrinting().create().toJson(genBlock).replace("\\n", "\n").replace("\\", ""));
@@ -173,35 +211,19 @@ public class Main extends Application implements Serializable {
         }
     }
 
-    public void broadcast(byte[] bytes, int port) throws Exception {
-        DatagramPacket packet = new DatagramPacket(bytes, bytes.length, InetAddress.getLocalHost(), port);
-        socket.send(packet);
+    public void send(byte[] bytes, InetAddress address, int port) throws Exception {
+        if (port != this.port) {
+            DatagramPacket packet = new DatagramPacket(bytes, bytes.length, address, port);
+            socket.send(packet);
+        }
     }
 
-    private Socket listen() throws Exception {
-        byte[] buffer = new byte[6400];
+    private UDPPacket listen() throws Exception {
+        byte[] buffer = new byte[1024];
         DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
         socket.receive(packet);
-        byte[] data = packet.getData();
-        Socket socket = new Socket(packet.getAddress(), packet.getPort());
-
-        try {
-            Object obj = SerializationUtils.deserialize(data);
-            if (obj instanceof Packet) {
-                isMining.set(false);
-                Packet cPacket = (Packet) obj;
-                replaceChain(cPacket);
-                isMining.set(true);
-            }
-
-            if (obj instanceof Transaction) {
-                Transaction cTx = (Transaction) obj;
-                mempool.add(cTx);
-            }
-        } catch (Exception e) {
-            gui.appendLog("Peer connected");
-        }
-        return socket;
+        String msg = new String(packet.getData(), 0, packet.getLength());
+        return new UDPPacket(msg, packet.getAddress(), packet.getPort());
     }
 
     private void sendChain(Socket soc) throws Exception {
@@ -210,15 +232,24 @@ public class Main extends Application implements Serializable {
         out.writeObject(packet);
     }
 
-    private void receiveChain(Socket soc) throws Exception {
-        isMining.set(false);
+    protected void sendTransaction(Transaction tx, Socket soc) throws Exception {
+        ObjectOutputStream out = new ObjectOutputStream(soc.getOutputStream());
+        out.writeObject(tx);
+    }
+
+    private void receive(Socket soc) throws Exception {
         ObjectInputStream in = new ObjectInputStream(soc.getInputStream());
         Object inObject = in.readObject();
-        Packet rPacket = (Packet) inObject;
-        blockchain = rPacket.getBlockchain();
-        mempool = rPacket.getMempool();
-        utxos = rPacket.getUtxos();
-        isMining.set(true);
+        if(inObject instanceof Packet) {
+            isMining.set(false);
+            Packet rPacket = (Packet) inObject;
+            replaceChain(rPacket);
+            isMining.set(true);
+        }
+        if(inObject instanceof Transaction) {
+            Transaction cTx = (Transaction) inObject;
+            mempool.add(cTx);
+        }
     }
 
     public Block findBlock(int index, String previousHash, long timestamp, String data, int diff) {
@@ -238,8 +269,13 @@ public class Main extends Application implements Serializable {
         return null;
     }
 
-    void replaceChain(Packet packet) {
-        if (Block.isValidChain(packet.getBlockchain()) && packet.getBlockchain().size() > blockchain.size()) {
+    synchronized void replaceChain(Packet packet) {
+        if (blockchain.size() == 0) {
+            blockchain = packet.getBlockchain();
+            mempool = packet.getMempool();
+            utxos = packet.getUtxos();
+            gui.appendLog("Chain received");
+        } else if (Block.isValidChain(packet.getBlockchain()) && packet.getBlockchain().size() > blockchain.size()) {
             gui.appendLog("Valid blockchain received. Replacing...");
             blockchain = packet.getBlockchain();
             mempool = packet.getMempool();
