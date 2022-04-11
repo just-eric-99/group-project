@@ -50,7 +50,6 @@ public class GUI {
     }
 
     public void mineButton(ActionEvent actionEvent) {
-        main.isMining.set(true);
         main.mine();
     }
 
