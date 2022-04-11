@@ -6,7 +6,7 @@ import java.util.*;
 public class Block implements Serializable {
 
     static int difficultyAdjustmentInterval = 10;
-    static long blockGenerationInterval = 30000;
+    static long blockGenerationInterval = 30;
 
     int index;
     String hash;
